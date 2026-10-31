@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lattice</title>
+<link rel="stylesheet" href="tokens.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.6 sans-serif;color:var(--color-ink);background:var(--color-surface)}
+header{padding:32px 16px 28px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='80' viewBox='0 0 240 80'%3E%3Cg fill='none' stroke='%232F5FC9' stroke-opacity='.10'%3E%3Cpath d='M0 80 40 0 90 50 140 0 180 60 240 10M40 0l50 80M140 0l-50 80M140 0l40 80M180 60l-60 20M90 50 0 30M180 60 240 80'/%3E%3C/g%3E%3C/svg%3E"),var(--gem-pale);color:var(--color-ink);border-bottom:2px solid transparent;border-image:var(--gem) 1}
+header .in{max-width:720px;margin:0 auto}
+header h1{font-size:22px;margin:0;letter-spacing:.04em}header p{margin:0;color:var(--color-muted);font-size:12px}
+main{max-width:720px;margin:0 auto;padding:20px 16px}
+h2{font-size:13px;color:var(--color-muted);font-weight:normal;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
+.card{display:flex;gap:12px;align-items:center;border:1px solid var(--line,#d5dbe3);border-top:3px solid var(--color-contrast-a);background:var(--color-base);padding:14px 12px;color:inherit;text-decoration:none}
+.card:nth-child(2n){border-top-color:var(--color-accent)}
+a.card:hover{outline:2px solid var(--color-contrast-a)}
+.hint{margin-top:20px;font-size:12px;color:var(--color-muted)}
+.gem{flex:none;width:44px;height:44px}
+/* Subject ごとにサファイアとエメラルドを交互に（2色だけなので管理は要らない） */
+.gem polygon{stroke:#fff;stroke-width:.6;stroke-linejoin:round}
+.sapphire .f1{fill:var(--sapphire-1)}.sapphire .f2{fill:var(--sapphire-2)}.sapphire .f3{fill:var(--sapphire-3)}.sapphire .f4{fill:var(--sapphire-4)}
+.emerald .f1{fill:var(--emerald-1)}.emerald .f2{fill:var(--emerald-2)}.emerald .f3{fill:var(--emerald-3)}.emerald .f4{fill:var(--emerald-4)}
+.name{font-weight:bold}.meta{font-size:12px;color:var(--color-muted)}
+.tag{white-space:nowrap;font-size:10px;border:1px solid var(--color-muted);padding:0 4px;margin-left:6px;font-weight:normal;color:var(--color-muted)}
+</style></head><body>
+<header><div class="in"><h1>Lattice</h1><p>a viewer for OKF bundles</p></div></header>
+<main><h2>Subject を選ぶ</h2><div class="grid" id="grid"></div>
+<p class="hint">Subject は <code>subjects/</code> の下のフォルダ1つ。新しく作るときは Claude に「新しい Subject を作って」と頼む。</p></main>
+<script>
+// 宝石の形と色は並び順で交互に（2色だけなので、Subject が増えても管理が要らない）
+const shapes=[c=>`<svg viewBox="0 0 48 48" class="gem ${c}"><polygon class="f2" points="6,20 16,12 20,20"/><polygon class="f1" points="16,12 32,12 28,20 20,20"/><polygon class="f3" points="32,12 42,20 28,20"/><polygon class="f3" points="6,20 20,20 24,42"/><polygon class="f2" points="20,20 28,20 24,42"/><polygon class="f4" points="28,20 42,20 24,42"/></svg>`,c=>`<svg viewBox="0 0 48 48" class="gem ${c}"><polygon class="f1" points="14,6 34,6 30,14 18,14"/><polygon class="f2" points="34,6 42,14 34,18 30,14"/><polygon class="f3" points="42,14 42,34 34,30 34,18"/><polygon class="f4" points="42,34 34,42 30,34 34,30"/><polygon class="f4" points="34,42 14,42 18,34 30,34"/><polygon class="f3" points="14,42 6,34 14,30 18,34"/><polygon class="f2" points="6,34 6,14 14,18 14,30"/><polygon class="f1" points="6,14 14,6 18,14 14,18"/><polygon class="f2" points="18,14 30,14 34,18 34,30 30,34 18,34 14,30 14,18"/></svg>`];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+fetch('/subjects.json').then(r=>r.json()).then(list=>{
+  document.getElementById('grid').innerHTML=list.map((x,i)=>`<a class="card" href="index.html?s=${encodeURIComponent(x.id)}">${shapes[i%2](i%2?'emerald':'sapphire')}
+<div><div class="name">${esc(x.title)}</div><div class="meta">${esc(x.id)}・Facet ${x.facets}・Discussion ${x.discussions}</div></div></a>`).join('')||'<p class="meta">subjects/ に Subject がありません。</p>';
+});
+</script></body></html>

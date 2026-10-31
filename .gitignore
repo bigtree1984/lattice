@@ -1,0 +1,6 @@
+__pycache__/
+.venv/
+bundle.json
+.lattice/
+~$*
+.DS_Store
