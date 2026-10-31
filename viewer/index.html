@@ -11,7 +11,9 @@ body{margin:0;font:13px/1.6 sans-serif;color:var(--color-ink);background:var(--c
 /* 宝石の要素は、白に近い淡い帯（--gem-pale）と濃い帯の細線（--gem）だけで出す。表の中身・○△には使わない */
 header{display:flex;gap:12px;align-items:center;padding:8px 16px;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='80' viewBox='0 0 240 80'%3E%3Cg fill='none' stroke='%232F5FC9' stroke-opacity='.10'%3E%3Cpath d='M0 80 40 0 90 50 140 0 180 60 240 10M40 0l50 80M140 0l-50 80M140 0l40 80M180 60l-60 20M90 50 0 30M180 60 240 80'/%3E%3C/g%3E%3C/svg%3E"),var(--gem-pale);color:var(--color-ink);border-bottom:2px solid transparent;border-image:var(--gem) 1}
 header button{background:rgb(255 255 255/.7)}header h1 .home{color:inherit;text-decoration:none}header .subj{font-size:12px;font-weight:normal;color:var(--color-muted)}
-header h1{font-size:15px;margin:0 16px 0 0}
+header h1{font-size:15px;margin:0 16px 0 0;display:flex;align-items:baseline;gap:4px;min-width:0;white-space:nowrap}
+/* 長い Subject 名は1行で省略（全文は title に出す） */
+header h1{overflow:hidden;min-width:5.5em}header h1 .home{flex:none}header .subj{overflow:hidden;text-overflow:ellipsis}header button,header label{flex:none;white-space:nowrap}
 button{font:inherit;border:1px solid var(--color-muted);background:var(--color-base);padding:3px 10px;cursor:pointer}
 button.on{background:var(--color-surface);font-weight:bold}
 label{margin-left:auto;cursor:pointer}
@@ -86,7 +88,7 @@ fetch(`/s/${SUBJ}/bundle.json`).then(r=>r.json()).then(b=>{
   for(const f of b.files){let fm={};try{fm=jsyaml.load(f.frontmatter)||{}}catch(e){}
     F[f.path]={path:f.path,fm,body:f.body,srcs:(fm.sources||[]).map(s=>s.resource)};}
   ASSETS=b.assets||[];BUNDLE=b.bundle;facetsDef=F['/facets.md'].fm;
-  const st=(F['/index.md']?.body.match(/^# (.+)$/m)||[])[1]||SUBJ;$('#subj').textContent='／ '+st;document.title=st+' — Lattice';
+  const st=(F['/index.md']?.body.match(/^# (.+)$/m)||[])[1]||SUBJ;$('#subj').textContent='／ '+st;$('#subj').title=st;document.title=st+' — Lattice';
   for(const p in F)for(const s of F[p].srcs)(F[s]||(F[s]={path:s,fm:{},body:'',srcs:[],missing:1}));
   for(const p in F)F[p].rev=[];
   for(const p in F)for(const s of F[p].srcs)if(F[s])F[s].rev.push(p);
@@ -203,7 +205,9 @@ function marks(d){
 const discs=()=>Object.values(F).filter(f=>f.fm.discussion_id&&vis(f));
 const pendingFor=id=>discs().map(d=>({d,lines:marks(d.path).t.get(id)})).filter(x=>x.lines&&!marks(x.d.path).o.has(id));
 // discussion viewer
-function dateOf(f){if(f.fm.date)return String(f.fm.date).slice(0,10);const m=f.body.match(/日付:\s*(\d{4}-\d{2}-\d{2})/);return m?m[1]:String(f.fm.generated?.at||'').slice(0,10)}
+// js-yaml は 2026-10-31 を Date にする。String() だと「Sat Oct 31」になるので ISO で取り出す
+const ymd=v=>v instanceof Date?v.toISOString().slice(0,10):String(v||'').slice(0,10);
+function dateOf(f){if(f.fm.date)return ymd(f.fm.date);const m=f.body.match(/日付:\s*(\d{4}-\d{2}-\d{2})/);return m?m[1]:ymd(f.fm.generated?.at)}
 function renderDisc(){
   const ds=Object.values(F).filter(f=>f.fm.discussion_id&&vis(f)).sort((a,b)=>(dateOf(b)+b.fm.discussion_id).localeCompare(dateOf(a)+a.fm.discussion_id));
   // Facet ごとに列の位置を facets.md の順で固定する

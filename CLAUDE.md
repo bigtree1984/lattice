@@ -21,7 +21,7 @@
 ## 2. バンドルの構造
 
 ```
-subjects/<Subject>/       Subject ＝ バンドル1つ。マーケティングでは Product Category ごとに1つ
+subjects/<Subject>/       Subject ＝ バンドル1つ（考える対象1つ）
 ├ index.md        L0 目次（okf_version: "0.2"）
 ├ log.md          更新記録（日付ごと・新しい順）
 ├ facets.md       Facet の一覧と2段のグループ構造
@@ -34,15 +34,17 @@ subjects/<Subject>/       Subject ＝ バンドル1つ。マーケティング�
     └ source-<名前>.pdf など  実物があるときだけ。カードと同じ名前で置き、カードの本文から実物にリンクする
 ```
 
-- MSC は **Product Category ごとに1つ**。Brand は複数の Product Category にまたがる識別記号。
+- **Subject は考える対象ごとに1つ**。マーケティングでは Product Category ごとに1つ作る（市場分析と施策実行の単位だから）。Brand は複数の Product Category にまたがる識別記号。
 - 新しい Facet を足す・グループを変えるときは `facets.md` を直し、`index.md` の並びも合わせる。Facet ID はバンドル全体で重複させない（`pest-society` など）。
-- **自社の Facet は最初から枠がある**（未作成ファイルへのリンクで「未議論」を表す）。**競合の Facet は議論に出たときに作る**。`facets.md` の `competitor_template`（STP＋4P）で「競合 ＞ 競合名 ＞ 5つ」を作る。
+- **自社の Facet は最初から枠がある**（未作成ファイルへのリンクで「未議論」を表す）。**競合の Facet は議論に出たときに作る**。`facets.md` の `competitor_template`（サンプルは STP＋4P）で「競合 ＞ 競合名 ＞ ひな形の Facet」を作る。
+- **自社の枠をサンプルから変えたら（例: サービスなので 4P を 7P にする）、競合のひな形も揃えるかをユーザーに聞き**、`competitor_template` に反映する。自社と競合で枠が違うと、同じ観点で比べられなくなるため。
 - Discussion の番号は MSC の中で通し番号（D-001, D-002 …）。
-- **新しい Subject を作って、と頼まれたら**: 対象（ブランド・商品カテゴリ）と英小文字のフォルダ名をユーザーに確かめ、`subjects/<名前>/` に `index.md`・`log.md`・`facets.md` と空の `facets/`・`discussions/` を作る。`facets.md` はサンプル（`subjects/edible-coffee/facets.md`）の構造をひな形にし、自社の Facet の L1 は未作成のリンクだけ置く（「未議論」になる）。サンプルの中身（決定・Discussion）は写さない。
+- **新しい Subject を作って、と頼まれたら**: 対象（ブランド・商品カテゴリ）と英小文字のフォルダ名をユーザーに確かめ、`subjects/<名前>/` に `index.md`・`log.md`・`facets.md` と空の `facets/`・`discussions/` を作る。`facets.md` はサンプル（`subjects/edible-coffee/facets.md`）の構造をひな形にし、自社の Facet の L1 は未作成のリンクだけ置く（「未議論」になる）。サンプルの中身（決定・Discussion）は写さない。`facets/` と `discussions/` は空のまま作らない（最初の Facet・Discussion を書くときに作る。空フォルダを残すための `.gitkeep` を置かずに済む）。作ったら Facet の一覧を示し、**OK をもらってからコミットする**（枠の決め方は判断なので、L1・L2 と同じく承認を通す）。
 - **Discussion の中身**
   - 会話だけなら `discussion_summary.md` だけ。
   - ファイルの種類は `discussion_summary.md` と原典カードの2つだけ。別のまとめファイルは作らない。
   - 資料を受け取ったり閲覧したりしたら、資料1つにつき原典カードを作る。荷札に `title`・`description`（一文で何の資料か、後から検索で当たりを付けられるように）・`resource`（元の場所）、本文に要約と「どこに何が書いてあるか」。その資料についての Claude の解釈も、節を分けてカードに書く。
+  - **ユーザーから渡されたファイル（PDF・Excel・画像など）は、実物も Discussion のフォルダにコピーする**（`source-<名前>.<拡張子>`、カードと同じ名前）。カードの本文から実物にリンクし、`resource` には元の場所を書く。元の場所はあとで消えたり動いたりするので、Subject の中に実物を残す。Web ページは実物を取らず、`resource` に URL を書く。
   - `discussion_summary.md` の節は、次の名前と順番に固定する（ビューアーとエージェントが同じ場所を探せるように）。
     1. `## 話したこと`
     2. `## 決定`（ユーザーの判断。無ければ「なし」）
@@ -93,7 +95,8 @@ subjects/<Subject>/       Subject ＝ バンドル1つ。マーケティング�
 1. `stable` のファイルを書き換えたら `draft` に戻し、`verified` を外す。ただし、ファイル名の変更などでリンク先のパスだけを直したとき（中身の判断が変わらないとき）は `stable` のまま残す。
 2. **つながっているファイルの食い違いを確かめる。** 書き換えたファイルの `sources`（根拠側）と、そのファイルを `sources` に持つファイル（派生側）を読み、古い内容のまま残っている記述を探す。
    - 例: Price の L1 を直したら、その根拠の Price の L2 と、Price の L1 を参照している他の Facet を読む。
-3. 食い違いが見つかったら、直す案を作って変更内容と一緒に示す。直す範囲を勝手に広げず、承認をもらう。
+   - **`sources` のつながりが無くても、本文で同じことに触れている箇所を探す。** 変わった決定のキーワードや、決着した持ち越し（「未決定」「未確認」「D-◯◯◯ の持ち越し」など）を Subject 全体で検索する。例: 自社の価格を決めたら、競合の Price の L2 に残っている「自社の単価は未決定」を見つける。
+3. 食い違いが見つかったら、**直す案を、今回の変更と同じ承認の一覧に入れて示す**（「指示が無かったので直さなかった」で終わらせない）。直す範囲を勝手に広げず、承認をもらう。
 
 ## 5. Discussion の終わりに
 
