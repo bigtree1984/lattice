@@ -30,7 +30,11 @@ label{margin-left:auto;cursor:pointer}
 .card.dep{opacity:.6}
 .badge{font-size:10px;border:1px solid var(--color-muted);padding:0 4px;margin-left:4px;font-weight:normal}
 .badge.draft{border-style:dashed}.badge.stable{background:var(--color-surface)}.badge.deprecated{text-decoration:line-through}
-#panel{width:520px;border-left:2px solid var(--color-muted);overflow:auto;padding:12px;display:none;flex:none}
+#panel{width:520px;overflow:auto;padding:12px;display:none;flex:none}
+/* 右パネルとの境界。左右にドラッグして幅を変える（ダブルクリックで元の幅） */
+#split{flex:none;width:6px;cursor:col-resize;display:none;background:var(--color-surface);border-left:2px solid var(--color-muted);touch-action:none}
+#split:hover,#split.drag{background:var(--color-contrast-b)}
+body.resizing{user-select:none;cursor:col-resize}
 #panel h2{margin:0 0 4px}
 .sec{border:1px solid var(--line);margin:10px 0;padding:6px 8px}
 .sec>h3{margin:0 0 6px;font-size:12px;background:var(--color-surface);padding:2px 6px}
@@ -76,7 +80,7 @@ table.dm{border-collapse:collapse;font-size:12px}
 <button id="tF" class="on">Facet</button><button id="tD">Discussion</button>
 <span id="focus" class="muted" title="Claude に「これ」と言えば、ここに出ているものを読みます"></span>
 <label><input type="checkbox" id="old"> old（deprecated を表示）</label></header>
-<div id="main"><div id="board"></div><div id="panel"></div></div>
+<div id="main"><div id="board"></div><div id="split" title="ドラッグで幅を変える（ダブルクリックで元に戻す）"></div><div id="panel"></div></div>
 <div id="disc"></div>
 <script>
 const $=s=>document.querySelector(s);
@@ -162,8 +166,8 @@ function related(id){
   return {x,L2:by('L2'),L3:by('discussion').filter(f=>f.fm.discussion_id==null),D:discs().filter(d=>{const m=marks(d.path);return m.o.has(id)||m.t.has(id)}),S:by('source')};
 }
 function renderPanel(){
-  const p=$('#panel');if(!sel||view!=='F'){p.style.display='none';return}
-  p.style.display='block';const id=sel;
+  const p=$('#panel');if(!sel||view!=='F'){p.style.display='none';$('#split').style.display='none';return}
+  p.style.display='block';$('#split').style.display='block';const id=sel;
   const r=related(id),lab=facetIds().includes(id)?id:id;
   if(!r){const pd=pendingFor(id);
     p.innerHTML=pd.length?`<h2>${esc(facetLabel(id))} <span class="badge">材料あり</span></h2><div class="muted">L1 はまだありません。決めるときの材料がある Discussion:</div>`+
@@ -230,6 +234,19 @@ function renderDisc(){
   syncFocus();
 }
 function openFacet(id){view='F';if(sel!==id)lastItem=null;sel=id;setView();render()}
+// 右パネルの幅：境界をドラッグで変え、この PC のブラウザにだけ覚えておく
+const PANEL_W=520,panelKey='lattice.panelWidth';
+function setPanelWidth(w){const max=$('#main').clientWidth-240;w=Math.max(320,Math.min(w,max));$('#panel').style.width=w+'px';return w}
+try{const w=+localStorage.getItem(panelKey);if(w)$('#panel').style.width=w+'px'}catch(e){}
+$('#split').addEventListener('pointerdown',e=>{
+  const sp=e.currentTarget,right=$('#main').getBoundingClientRect().right;let w=null;
+  sp.setPointerCapture(e.pointerId);sp.classList.add('drag');document.body.classList.add('resizing');
+  const move=ev=>{w=setPanelWidth(right-ev.clientX)};
+  const up=()=>{sp.removeEventListener('pointermove',move);sp.classList.remove('drag');document.body.classList.remove('resizing');
+    if(w)try{localStorage.setItem(panelKey,w)}catch(e){}};
+  sp.addEventListener('pointermove',move);sp.addEventListener('pointerup',up,{once:true});
+});
+$('#split').addEventListener('dblclick',()=>{setPanelWidth(PANEL_W);try{localStorage.removeItem(panelKey)}catch(e){}});
 function setView(){$('#main').style.display=view==='F'?'flex':'none';$('#disc').style.display=view==='D'?'block':'none';$('#tF').classList.toggle('on',view==='F');$('#tD').classList.toggle('on',view==='D')}
 function goPath(p){ // リンク先へ移動
   if(ASSETS.includes(p))return openAsset(p,VIEWABLE.test(p)?'view':'app');
