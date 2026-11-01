@@ -20,6 +20,7 @@ When you think through a strategy with an AI over many sessions, the conclusions
 - The agent is told to **remember nothing except what is in the files**, so the files are the single source of truth.
 - Every decision can be **traced back** to the conversation and the material it came from.
 - Everything is plain text in git, so you can review changes, tag a year-end snapshot, and roll back.
+- Facets are defined up front, so an **empty box is information too**: it shows a topic nobody has discussed yet. Nothing you have yet to think about gets quietly left out.
 
 ## Concepts
 
