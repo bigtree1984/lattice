@@ -76,7 +76,7 @@ subjects/<Subject>/       Subject ＝ バンドル1つ（考える対象1つ）
 | `date` | discussion_summary.md だけ。その Discussion の日付（`YYYY-MM-DD`、フォルダ名と同じ） |
 | `brand` | MVV のファイルに必須 |
 | `generated` | `{ by: claude/<モデル>, at: <ISO 8601、+09:00> }` |
-| `sources` | **出どころ**。そのファイルを作る元にしたファイルのリスト。必ず書く |
+| `sources` | **出どころ**。そのファイルを作る元にしたファイルのリスト。必ず書く。1ファイルにつき `- resource: /パス` と、その下に `title:` の行（サンプルと同じ形） |
 | `status` | L1・L2 だけ。作るときは `draft`、承認後に `stable`、しまうと `deprecated` |
 | `verified` | 承認時に `{ by: human:<呼び名>, at: ... }` |
 | `deprecated_reason` | しまったときの理由 |

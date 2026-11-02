@@ -88,7 +88,7 @@ subjects/<Subject>/       Subject = one bundle (one thing to think about)
 | `date` | discussion_summary.md only. The date of that Discussion (`YYYY-MM-DD`, same as the folder name) |
 | `brand` | Required on MVV files |
 | `generated` | `{ by: claude/<model>, at: <ISO 8601 with offset> }` |
-| `sources` | **Provenance**: the list of files this file was made from. Always write it |
+| `sources` | **Provenance**: the list of files this file was made from. Always write it, one item per file as `- resource: /path/to/file.md` with a `title:` line below it (the same form as the sample) |
 | `status` | L1 and L2 only. `draft` when created, `stable` after approval, `deprecated` when hidden |
 | `verified` | On approval, `{ by: human:<name>, at: ... }` |
 | `deprecated_reason` | Why it was hidden |
