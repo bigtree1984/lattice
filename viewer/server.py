@@ -151,9 +151,14 @@ class Handler(SimpleHTTPRequestHandler):
             return self.send_json(400, {"error": "paths"})
         label = str(req.get("label", ""))[:200].replace("\n", " ")
         now = datetime.now().astimezone().isoformat(timespec="seconds")
-        lines = ["# ビューアーで今見ているもの", "",
-                 f"- 更新: {now}", f"- Subject: {subject}", f"- 見ているもの: {label}",
-                 "- ファイル（上ほど手前に開いているもの）:"]
+        if req.get("lang") == "en":
+            lines = ["# What the viewer is showing now", "",
+                     f"- Updated: {now}", f"- Subject: {subject}", f"- Showing: {label}",
+                     "- Files (frontmost first):"]
+        else:
+            lines = ["# ビューアーで今見ているもの", "",
+                     f"- 更新: {now}", f"- Subject: {subject}", f"- 見ているもの: {label}",
+                     "- ファイル（上ほど手前に開いているもの）:"]
         lines += [f"  - @{p.relative_to(ROOT.resolve()).as_posix()}" for p in paths]
         FOCUS.parent.mkdir(exist_ok=True)
         FOCUS.write_text("\n".join(lines) + "\n", encoding="utf-8")

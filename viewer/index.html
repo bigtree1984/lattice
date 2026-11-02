@@ -1,8 +1,9 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><title>Lattice</title>
+<html><head><meta charset="utf-8"><title>Lattice</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <link rel="stylesheet" href="tokens.css">
+<script src="i18n.js"></script>
 <style>
 /* 色は tokens.css の7役だけを使う。細い罫線は淡墨を地に混ぜて作る */
 :root{--line:color-mix(in srgb,var(--color-muted) 35%,var(--color-base))}
@@ -75,17 +76,19 @@ table.dm{border-collapse:collapse;font-size:12px}
 .cp:hover{background:var(--color-surface)}.cp.done{background:var(--color-ink);color:var(--color-base)}
 #focus{margin-left:auto;font-size:12px;max-width:520px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #focus+label{margin-left:12px}
+select.lang{font:inherit;font-size:12px;margin-left:8px;border:1px solid var(--color-muted);background:rgb(255 255 255/.7);flex:none}
 </style></head><body>
-<header><h1><a href="subjects.html" class="home" title="Subject を選ぶ">Lattice</a> <span id="subj" class="subj"></span></h1>
+<header><h1><a href="subjects.html" class="home" data-i18n-title="pickSubject">Lattice</a> <span id="subj" class="subj"></span></h1>
 <button id="tF" class="on">Facet</button><button id="tD">Discussion</button>
-<span id="focus" class="muted" title="Claude に「これ」と言えば、ここに出ているものを読みます"></span>
-<label><input type="checkbox" id="old"> old（deprecated を表示）</label></header>
-<div id="main"><div id="board"></div><div id="split" title="ドラッグで幅を変える（ダブルクリックで元に戻す）"></div><div id="panel"></div></div>
+<span id="focus" class="muted" data-i18n-title="focusHint"></span>
+<label><input type="checkbox" id="old"> <span data-i18n="showOld"></span></label></header>
+<div id="main"><div id="board"></div><div id="split" data-i18n-title="splitHint"></div><div id="panel"></div></div>
 <div id="disc"></div>
 <script>
 const $=s=>document.querySelector(s);
+applyI18n();document.querySelector('header').appendChild(langSelect());
 // どの Subject を開くかは URL の ?s= で決める。無ければ選ぶ画面へ
-const SUBJ=new URLSearchParams(location.search).get('s');if(!SUBJ)location.replace('subjects.html');
+const SUBJ=new URLSearchParams(location.search).get('s');if(!SUBJ)location.replace('subjects.html'+location.search);
 let F={},ASSETS=[],BUNDLE='',lastItem=null,lastFocus='',facetsDef,sel=null,showOld=false,view='F',openDisc=null,openCard=null;
 const esc=s=>String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 fetch(`/s/${SUBJ}/bundle.json`).then(r=>r.json()).then(b=>{
@@ -108,20 +111,20 @@ function badge(f){const s=f.fm.status;return s?`<span class="badge ${s}">${s}</s
 function lead(f){return (f.body.split('\n').filter(l=>/^\s*[-*] /.test(l)).slice(0,7).map(l=>l.replace(/^\s*[-*] /,'').replace(/\[([^\]]*)\]\([^)]*\)/g,'$1').replace(/\*\*/g,'')))}
 // ② Claude に渡す参照（@パス）をコピーするボタン。Claude Code はこの形をそのまま「このファイルを読む」と解釈する
 const ref=p=>`@subjects/${BUNDLE}${p}`;
-const cp=p=>`<button class="cp" data-copy="${p}" title="${ref(p)} をコピー">コピー</button>`;
-// ③ 今見ているものを .msc/focus.md に書いてもらう。Claude は「これ」と言われたらそこを読む
+const cp=p=>`<button class="cp" data-copy="${p}" title="${t('copyTitle',ref(p))}">${t('copy')}</button>`;
+// ③ 今見ているものを .lattice/focus.md に書いてもらう。Claude は「これ」と言われたらそこを読む
 function facetLabel(id){for(const g of facetsDef.groups)for(const s of g.groups)for(const f of s.facets)if(f.id===id)return s.facets.length>1?`${s.label} ＞ ${f.label}`:f.label;return id}
-function syncFocusEmpty(id){lastFocus='';$('#focus').textContent='Facet「'+facetLabel(id)+'」は L1 が無いので、Claude には Facet 名で伝えてください'}
+function syncFocusEmpty(id){lastFocus='';$('#focus').textContent=t('focusNoL1',facetLabel(id))}
 function syncFocus(){
   let label='',paths=[];
   if(view==='F'&&sel){const x=l1(sel);paths=[lastItem,x&&x.path].filter(Boolean);
-    label=`Facet「${facetLabel(sel)}」`+(lastItem?` ＞ ${F[lastItem].fm.title}`:' の L1');}
+    label=t('facetQ',facetLabel(sel))+(lastItem?` ＞ ${F[lastItem].fm.title}`:t('ofL1'));}
   if(view==='D'&&openDisc){paths=[openCard,openDisc].filter(Boolean);
     label=`${F[openDisc].fm.discussion_id} ${F[openDisc].fm.title.replace(/^D-\d+ /,'')}`+(openCard?` ＞ ${F[openCard].fm.title}`:'');}
   if(!paths.length)return;
   const key=JSON.stringify(paths);if(key===lastFocus)return;lastFocus=key;
-  $('#focus').textContent='Claude と共有中: '+label;
-  fetch('/api/focus',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:SUBJ,label,paths})}).catch(()=>{});
+  $('#focus').textContent=t('focusSharing')+label;
+  fetch('/api/focus',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:SUBJ,label,paths,lang:LANG})}).catch(()=>{});
 }
 function render(){
   const bd=$('#board');bd.innerHTML='';
@@ -133,7 +136,7 @@ function render(){
       for(const f of s.facets){
         const x=l1(f.id),c=document.createElement('div');
         if(!x){const pd=pendingFor(f.id);c.className='card empty';
-          c.innerHTML=pd.length?`<h4>${esc(f.label)}<span class="badge">材料あり</span></h4><div class="muted">△ ${pd.map(p=>esc(p.d.fm.discussion_id)).join('・')}</div>`:`<h4>${esc(f.label)}<span class="badge">未議論</span></h4><div class="muted">（まだ空）</div>`;}
+          c.innerHTML=pd.length?`<h4>${esc(f.label)}<span class="badge">${t('hasMaterial')}</span></h4><div class="muted">△ ${pd.map(p=>esc(p.d.fm.discussion_id)).join(t('sep'))}</div>`:`<h4>${esc(f.label)}<span class="badge">${t('notDiscussed')}</span></h4><div class="muted">${t('stillEmpty')}</div>`;}
         else if(!vis(x)){continue}
         else{c.className='card'+(x.fm.status==='deprecated'?' dep':'');
           c.innerHTML=`<h4>${esc(f.label)}${badge(x)}</h4><ul>${lead(x).map(l=>`<li>${esc(l.length>46?l.slice(0,46)+'…':l)}</li>`).join('')}</ul>`;}
@@ -146,14 +149,14 @@ function render(){
 function item(f,withRel){
   const dep=f.fm.status==='deprecated';
   return `<div class="item ${dep?'dep':''}" data-p="${f.path}"><div class="t">▸ ${esc(f.fm.title||f.path)} ${badge(f)}${cp(f.path)}</div>
-  ${dep?`<div class="reason">hide理由: ${esc(f.fm.deprecated_reason||'（未記入）')}</div>`:''}
+  ${dep?`<div class="reason">${t('hideReason')}${esc(f.fm.deprecated_reason||t('notFilled'))}</div>`:''}
   <div class="body">${md(f.body)}${withRel?rel(f):''}</div></div>`;}
 function rel(f){
   const a=f.srcs.filter(p=>F[p]&&!F[p].missing),b=f.rev;
   const ch=p=>`<span class="chip" data-go="${p}">${esc(F[p].fm.title||p)}</span>`;
   const home=f.path.startsWith('/discussions/')&&!f.fm.discussion_id?f.path.replace(/[^/]+$/,'discussion_summary.md'):null;
-  const hm=home&&F[home]?`<div class="muted">入っている Discussion: <span class="chip" data-go="${home}">${esc(F[home].fm.discussion_id)} ${esc(F[home].fm.title.replace(/^D-\d+ /,''))}</span></div>`:'';
-  return hm+`<div class="muted">根拠 (sources): ${a.map(ch).join('')||'なし'}</div><div class="muted">派生 (逆向き): ${b.map(ch).join('')||'なし'}</div>`;}
+  const hm=home&&F[home]?`<div class="muted">${t('inDiscussion')}<span class="chip" data-go="${home}">${esc(F[home].fm.discussion_id)} ${esc(F[home].fm.title.replace(/^D-\d+ /,''))}</span></div>`:'';
+  return hm+`<div class="muted">${t('sources')}${a.map(ch).join('')||t('none')}</div><div class="muted">${t('derived')}${b.map(ch).join('')||t('none')}</div>`;}
 function related(id){
   const x=l1(id);if(!x)return null;
   const set=new Set([x.path]);
@@ -170,9 +173,9 @@ function renderPanel(){
   p.style.display='block';$('#split').style.display='block';const id=sel;
   const r=related(id),lab=facetIds().includes(id)?id:id;
   if(!r){const pd=pendingFor(id);
-    p.innerHTML=pd.length?`<h2>${esc(facetLabel(id))} <span class="badge">材料あり</span></h2><div class="muted">L1 はまだありません。決めるときの材料がある Discussion:</div>`+
+    p.innerHTML=pd.length?`<h2>${esc(facetLabel(id))} <span class="badge">${t('hasMaterial')}</span></h2><div class="muted">${t('noL1Yet')}</div>`+
       pd.map(x=>`<div class="sec"><h3><span class="chip" data-go="${x.d.path}">${esc(x.d.fm.discussion_id)} ${esc(x.d.fm.title.replace(/^D-\d+ /,''))}</span></h3><ul>${x.lines.map(l=>`<li>${esc(l)}</li>`).join('')}</ul></div>`).join('')
-      :`<h2>${esc(facetLabel(id))} <span class="badge">未議論</span></h2><div class="muted">この Facet はまだ議論されていません。</div>`;
+      :`<h2>${esc(facetLabel(id))} <span class="badge">${t('notDiscussed')}</span></h2><div class="muted">${t('notDiscussedYet')}</div>`;
     syncFocusEmpty(id);return}
   // facet-to-facet
   const nb=new Set();
@@ -181,28 +184,28 @@ function renderPanel(){
   const dl=[...r.D,...r.L3];
   p.innerHTML=`<h2>${esc(r.x.fm.title)} ${badge(r.x)}</h2>
   <div class="muted">${esc(r.x.fm.description||'')}</div>
-  <div class="sec"><h3>L1 決定${cp(r.x.path)}</h3>${md(r.x.body)}${rel(r.x)}</div>
-  <div class="sec"><h3>L2 文脈（理由・選ばなかった案）</h3>${r.L2.map(f=>item(f,1)).join('')||'<div class="muted">なし</div>'}</div>
-  <div class="sec"><h3>Discussion の資料</h3>${[...r.L3,...r.S].map(f=>item(f,1)).join('')||'<div class="muted">なし</div>'}</div>
-  <div class="sec"><h3>関連する Discussion</h3>${r.D.map(f=>`<div class="chip" data-disc="${f.path}">${esc(f.fm.discussion_id)} ${esc(f.fm.title.replace(/^D-\d+ /,''))}</div>`).join('')||'<div class="muted">なし</div>'}</div>
-  <div class="sec"><h3>つながる Facet（参照している／されている）</h3>${[...nb].map(i=>`<span class="chip" data-facet="${i}">${esc(i)}</span>`).join('')||'<div class="muted">なし</div>'}</div>`;
+  <div class="sec"><h3>${t('secL1')}${cp(r.x.path)}</h3>${md(r.x.body)}${rel(r.x)}</div>
+  <div class="sec"><h3>${t('secL2')}</h3>${r.L2.map(f=>item(f,1)).join('')||`<div class="muted">${t('none')}</div>`}</div>
+  <div class="sec"><h3>${t('secMaterials')}</h3>${[...r.L3,...r.S].map(f=>item(f,1)).join('')||`<div class="muted">${t('none')}</div>`}</div>
+  <div class="sec"><h3>${t('secDiscs')}</h3>${r.D.map(f=>`<div class="chip" data-disc="${f.path}">${esc(f.fm.discussion_id)} ${esc(f.fm.title.replace(/^D-\d+ /,''))}</div>`).join('')||`<div class="muted">${t('none')}</div>`}</div>
+  <div class="sec"><h3>${t('secLinked')}</h3>${[...nb].map(i=>`<span class="chip" data-facet="${i}">${esc(i)}</span>`).join('')||`<div class="muted">${t('none')}</div>`}</div>`;
 }
 // 実物ファイル（PDF・Excel など）。ブラウザで見られるものは新しいタブで開き、それ以外は PC の既定のアプリで開く
 const VIEWABLE=/\.(pdf|png|jpe?g|gif|svg|txt|mp4)$/i;
 const assetsOf=card=>ASSETS.filter(a=>a.replace(/\.[^./]+$/,'')===card.replace(/\.md$/,''));
-function acts(card){return assetsOf(card).map(a=>`<div class="acts"><span class="k">実物 ${esc(a.split('/').pop())}</span>`+
-  (VIEWABLE.test(a)?`<a href="/s/${SUBJ}/bundle${a}" target="_blank" rel="noopener">開く</a>`:`<button data-asset="${a}" data-mode="app">アプリで開く</button>`)+
-  `<button data-asset="${a}" data-mode="reveal">フォルダで表示</button></div>`).join('')}
+function acts(card){return assetsOf(card).map(a=>`<div class="acts"><span class="k">${t('asset')}${esc(a.split('/').pop())}</span>`+
+  (VIEWABLE.test(a)?`<a href="/s/${SUBJ}/bundle${a}" target="_blank" rel="noopener">${t('open')}</a>`:`<button data-asset="${a}" data-mode="app">${t('openApp')}</button>`)+
+  `<button data-asset="${a}" data-mode="reveal">${t('reveal')}</button></div>`).join('')}
 function openAsset(a,mode){
   if(mode==='view')return window.open(`/s/${SUBJ}/bundle`+a,'_blank','noopener');
   fetch('/api/open',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({subject:SUBJ,path:a,mode})})
-    .then(r=>r.ok||alert('開けませんでした（ローカルサーバー server.py で動かしているか確認）'));
+    .then(r=>r.ok||alert(t('openFailed')));
 }
 // Discussion と Facet のつながり。○ = その Discussion が L2 の sources に入っている、△ = 持ち越しの行頭に Facet ID がある
 function marks(d){
   const dir=d.replace(/[^/]+$/,''),o=new Set(),t=new Map();
   for(const f of Object.values(F))if(!f.missing&&f.fm.layer==='L2'&&vis(f)&&f.srcs.some(x=>x.startsWith(dir)))o.add(fidOf(f.path));
-  const sec=(F[d].body.split(/^## /m).find(x=>x.startsWith('持ち越し'))||'');
+  const sec=(F[d].body.split(/^## /m).find(x=>/^(持ち越し|Carry-over)/i.test(x))||'');
   for(const m of sec.matchAll(/^- `([a-z0-9-]+)`[：:]\s*(.*)$/gm))t.set(m[1],[...(t.get(m[1])||[]),m[2]]);
   return {o,t};
 }
@@ -211,7 +214,7 @@ const pendingFor=id=>discs().map(d=>({d,lines:marks(d.path).t.get(id)})).filter(
 // discussion viewer
 // js-yaml は 2026-10-31 を Date にする。String() だと「Sat Oct 31」になるので ISO で取り出す
 const ymd=v=>v instanceof Date?v.toISOString().slice(0,10):String(v||'').slice(0,10);
-function dateOf(f){if(f.fm.date)return ymd(f.fm.date);const m=f.body.match(/日付:\s*(\d{4}-\d{2}-\d{2})/);return m?m[1]:ymd(f.fm.generated?.at)}
+function dateOf(f){if(f.fm.date)return ymd(f.fm.date);const m=f.body.match(/(?:日付|Date):\s*(\d{4}-\d{2}-\d{2})/);return m?m[1]:ymd(f.fm.generated?.at)}
 function renderDisc(){
   const ds=Object.values(F).filter(f=>f.fm.discussion_id&&vis(f)).sort((a,b)=>(dateOf(b)+b.fm.discussion_id).localeCompare(dateOf(a)+a.fm.discussion_id));
   // Facet ごとに列の位置を facets.md の順で固定する
@@ -226,11 +229,11 @@ function renderDisc(){
     const dir=f.path.replace(/[^/]+$/,''),res=Object.values(F).filter(x=>!x.missing&&x.path.startsWith(dir)&&x!==f&&vis(x));
     const mk=M.get(f.path),open=openDisc===f.path;
     return `<tr class="row ${open?'open':''}" data-p="${f.path}"><td class="dt c1">${dateOf(f)}</td><td class="ti c2">${open?'▾':'▸'} ${esc(f.fm.discussion_id)} ${esc(f.fm.title.replace(/^D-\d+ /,''))}${cp(f.path)}</td>`+
-      cols.map(c=>mk.o.has(c.id)?`<td class="o on ${cls(c)}" data-facet="${c.id}" title="${c.id}：L2 に反映">○</td>`:mk.t.has(c.id)?`<td class="o on ${cls(c)}" data-facet="${c.id}" title="${c.id}：${esc(mk.t.get(c.id).join(' / '))}">△</td>`:`<td class="o ${cls(c)}"></td>`).join('')+`</tr>`+
-      (open?`<tr class="bodyrow"><td colspan="${cols.length+2}">${md(f.body)}<div class="srcs"><b>原典カード</b>${res.map(x=>`<div class="src ${openCard===x.path?'open':''}" data-card="${x.path}"><div class="t">${openCard===x.path?'▾':'▸'} ${esc(x.fm.title)}${cp(x.path)}</div><div class="muted">${esc(x.fm.description||'')}</div>${acts(x.path)}${openCard===x.path?`<div class="body">${md(x.body)}</div>`:''}</div>`).join('')||'<div class="muted">なし（会話だけの Discussion）</div>'}</div></td></tr>`:'');
+      cols.map(c=>mk.o.has(c.id)?`<td class="o on ${cls(c)}" data-facet="${c.id}" title="${t('reflected',c.id)}">○</td>`:mk.t.has(c.id)?`<td class="o on ${cls(c)}" data-facet="${c.id}" title="${c.id}：${esc(mk.t.get(c.id).join(' / '))}">△</td>`:`<td class="o ${cls(c)}"></td>`).join('')+`</tr>`+
+      (open?`<tr class="bodyrow"><td colspan="${cols.length+2}">${md(f.body)}<div class="srcs"><b>${t('sourceCards')}</b>${res.map(x=>`<div class="src ${openCard===x.path?'open':''}" data-card="${x.path}"><div class="t">${openCard===x.path?'▾':'▸'} ${esc(x.fm.title)}${cp(x.path)}</div><div class="muted">${esc(x.fm.description||'')}</div>${acts(x.path)}${openCard===x.path?`<div class="body">${md(x.body)}</div>`:''}</div>`).join('')||`<div class="muted">${t('noSourceCards')}</div>`}</div></td></tr>`:'');
   }).join('');
-  $('#disc').innerHTML=`<h2 style="margin-top:0">Discussion（新しい順）</h2><div class="muted">○ = その Discussion が L2 に反映された Facet、△ = 持ち越し（その Facet を決める材料がある）。○ や列の見出しを押すと Facet ビューアーへ。行を押すと要約が開く。</div>
-  <div class="dmwrap"><table class="dm"><thead><tr class="g"><th rowspan="2" class="c1">日付</th><th rowspan="2" class="c2">Discussion</th>${gh}</tr><tr class="f">${fh}</tr></thead><tbody>${rows}</tbody></table></div>`;
+  $('#disc').innerHTML=`<h2 style="margin-top:0">${t('discTitle')}</h2><div class="muted">${t('discHelp')}</div>
+  <div class="dmwrap"><table class="dm"><thead><tr class="g"><th rowspan="2" class="c1">${t('date')}</th><th rowspan="2" class="c2">Discussion</th>${gh}</tr><tr class="f">${fh}</tr></thead><tbody>${rows}</tbody></table></div>`;
   syncFocus();
 }
 function openFacet(id){view='F';if(sel!==id)lastItem=null;sel=id;setView();render()}
@@ -263,7 +266,7 @@ function goPath(p){ // リンク先へ移動
 }
 document.addEventListener('click',e=>{
   const c=e.target.closest('[data-copy]');
-  if(c){navigator.clipboard.writeText(ref(c.dataset.copy)).then(()=>{c.textContent='コピーしました';c.classList.add('done');setTimeout(()=>{c.textContent='コピー';c.classList.remove('done')},1200)});return}
+  if(c){navigator.clipboard.writeText(ref(c.dataset.copy)).then(()=>{c.textContent=t('copied');c.classList.add('done');setTimeout(()=>{c.textContent=t('copy');c.classList.remove('done')},1200)});return}
   const a=e.target.closest('a[href^="/"]');if(a){e.preventDefault();goPath(a.getAttribute('href'));return}
   let t;
   if(t=e.target.closest('[data-facet]')){openFacet(t.dataset.facet);return}

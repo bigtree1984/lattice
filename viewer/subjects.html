@@ -1,7 +1,8 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lattice</title>
 <link rel="stylesheet" href="tokens.css">
+<script src="i18n.js"></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;font:14px/1.6 sans-serif;color:var(--color-ink);background:var(--color-surface)}
@@ -21,17 +22,20 @@ a.card:hover{outline:2px solid var(--color-contrast-a)}
 .sapphire .f1{fill:var(--sapphire-1)}.sapphire .f2{fill:var(--sapphire-2)}.sapphire .f3{fill:var(--sapphire-3)}.sapphire .f4{fill:var(--sapphire-4)}
 .emerald .f1{fill:var(--emerald-1)}.emerald .f2{fill:var(--emerald-2)}.emerald .f3{fill:var(--emerald-3)}.emerald .f4{fill:var(--emerald-4)}
 .name{font-weight:bold}.meta{font-size:12px;color:var(--color-muted)}
+header .in{display:flex;align-items:flex-end;gap:12px}header .in>div{flex:1}
+select.lang{font:inherit;font-size:12px;border:1px solid var(--color-muted);background:rgb(255 255 255/.7)}
 .tag{white-space:nowrap;font-size:10px;border:1px solid var(--color-muted);padding:0 4px;margin-left:6px;font-weight:normal;color:var(--color-muted)}
 </style></head><body>
-<header><div class="in"><h1>Lattice</h1><p>a viewer for OKF bundles</p></div></header>
-<main><h2>Subject を選ぶ</h2><div class="grid" id="grid"></div>
-<p class="hint">Subject は <code>subjects/</code> の下のフォルダ1つ。新しく作るときは Claude に「新しい Subject を作って」と頼む。</p></main>
+<header><div class="in"><div><h1>Lattice</h1><p>a viewer for OKF bundles</p></div></div></header>
+<main><h2 data-i18n="pickSubject"></h2><div class="grid" id="grid"></div>
+<p class="hint" data-i18n="pickerHint"></p></main>
 <script>
+applyI18n();document.querySelector('header .in').appendChild(langSelect());
 // 宝石の形と色は並び順で交互に（2色だけなので、Subject が増えても管理が要らない）
 const shapes=[c=>`<svg viewBox="0 0 48 48" class="gem ${c}"><polygon class="f2" points="6,20 16,12 20,20"/><polygon class="f1" points="16,12 32,12 28,20 20,20"/><polygon class="f3" points="32,12 42,20 28,20"/><polygon class="f3" points="6,20 20,20 24,42"/><polygon class="f2" points="20,20 28,20 24,42"/><polygon class="f4" points="28,20 42,20 24,42"/></svg>`,c=>`<svg viewBox="0 0 48 48" class="gem ${c}"><polygon class="f1" points="14,6 34,6 30,14 18,14"/><polygon class="f2" points="34,6 42,14 34,18 30,14"/><polygon class="f3" points="42,14 42,34 34,30 34,18"/><polygon class="f4" points="42,34 34,42 30,34 34,30"/><polygon class="f4" points="34,42 14,42 18,34 30,34"/><polygon class="f3" points="14,42 6,34 14,30 18,34"/><polygon class="f2" points="6,34 6,14 14,18 14,30"/><polygon class="f1" points="6,14 14,6 18,14 14,18"/><polygon class="f2" points="18,14 30,14 34,18 34,30 30,34 18,34 14,30 14,18"/></svg>`];
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
 fetch('/subjects.json').then(r=>r.json()).then(list=>{
-  document.getElementById('grid').innerHTML=list.map((x,i)=>`<a class="card" href="index.html?s=${encodeURIComponent(x.id)}">${shapes[i%2](i%2?'emerald':'sapphire')}
-<div><div class="name">${esc(x.title)}</div><div class="meta">${esc(x.id)}・Facet ${x.facets}・Discussion ${x.discussions}</div></div></a>`).join('')||'<p class="meta">subjects/ に Subject がありません。</p>';
+  document.getElementById('grid').innerHTML=list.map((x,i)=>`<a class="card" href="index.html?s=${encodeURIComponent(x.id)}${new URLSearchParams(location.search).has('lang')?'&lang='+LANG:''}">${shapes[i%2](i%2?'emerald':'sapphire')}
+<div><div class="name">${esc(x.title)}</div><div class="meta">${esc(x.id)}${t('sep')}Facet ${x.facets}${t('sep')}Discussion ${x.discussions}</div></div></a>`).join('')||`<p class="meta">${t('noSubjects')}</p>`;
 });
 </script></body></html>

@@ -11,7 +11,7 @@ Lattice は、AI エージェント（Claude Code）と一緒に考えて決め�
 
 ファイルの形式は [Open Knowledge Format（OKF）](https://github.com/GoogleCloudPlatform/open-knowledge-format) v0.2 に沿っています。人にも、ほかのツールにも読める形のまま残ります。
 
-> **現在の状態:** 初期リリース（v0.1）です。エージェントへの指示書（`CLAUDE.md`）と同梱のサンプルは、今のところ日本語だけです。英語版は今後用意する予定です。
+> **現在の状態:** 初期リリース（v0.1）です。ビューアーの画面は日本語と英語に対応しています（右上で切り替え）。エージェントへの指示書は英語の `CLAUDE.md` で、日本語訳を `CLAUDE.ja.md` に置いています。同梱のサンプルと `GLOSSARY.md` は、今のところ日本語だけです。
 
 ## なぜ作ったか
 
@@ -75,12 +75,14 @@ claude
 
 ```
 lattice/
-├── CLAUDE.md          エージェントへの指示書（マーケティング戦略のひな形）
+├── CLAUDE.md          エージェントへの指示書（マーケティング戦略のひな形、英語）
+├── CLAUDE.ja.md       CLAUDE.md の日本語訳（人が読むためのもの）
 ├── GLOSSARY.md        会話で使う言葉
 ├── viewer/            ローカルサーバーとビューアー
 │   ├── server.py
 │   ├── index.html     Facet ボードと Discussion の表
 │   ├── subjects.html  Subject を選ぶ画面
+│   ├── i18n.js        画面の文言（日本語・英語）
 │   └── tokens.css     色のトークン（生成物。手で編集しない）
 └── subjects/
     └── edible-coffee/ サンプルの Subject（架空）

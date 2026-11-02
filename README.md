@@ -11,7 +11,7 @@ Lattice is a small local tool for keeping the knowledge you work out together wi
 
 The files follow the [Open Knowledge Format (OKF)](https://github.com/GoogleCloudPlatform/open-knowledge-format) v0.2, so they stay readable by people and by other tools.
 
-> **Status:** early release (v0.1). The agent instructions (`CLAUDE.md`) and the bundled sample are currently written in **Japanese**. English versions are planned.
+> **Status:** early release (v0.1). The viewer UI is available in English and Japanese (switch at the top right). The agent instructions (`CLAUDE.md`) are in English, with a Japanese translation in `CLAUDE.ja.md`. The bundled sample Subject and `GLOSSARY.md` are currently in Japanese.
 
 ## Why
 
@@ -76,11 +76,13 @@ A folder in `subjects/` counts as a Subject when it has an `index.md`. Hidden fo
 ```
 lattice/
 ├── CLAUDE.md          instructions for the agent (marketing strategy template)
+├── CLAUDE.ja.md       Japanese translation of CLAUDE.md, for reading
 ├── GLOSSARY.md        terms used in conversations
 ├── viewer/            the local server and web viewer
 │   ├── server.py
 │   ├── index.html     Facet board and Discussion table
 │   ├── subjects.html  Subject picker
+│   ├── i18n.js        UI text in English and Japanese
 │   └── tokens.css     color tokens (generated, do not edit)
 └── subjects/
     └── edible-coffee/ sample Subject (fictional)
